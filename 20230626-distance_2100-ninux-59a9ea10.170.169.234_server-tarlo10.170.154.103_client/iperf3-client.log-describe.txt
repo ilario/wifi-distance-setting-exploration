@@ -1,0 +1,82 @@
+                  Retry                                      Bitrate_in_bps                                                                   
+                   mean       std  min  25%  50%  75%    max           mean           std  min         25%         50%         75%         max
+Role Distance                                                                                                                                 
+RX-C 2100           NaN       NaN  NaN  NaN  NaN  NaN    NaN   1.236280e+07  1.177872e+07  0.0   3070000.0   4220000.0  27200000.0  38600000.0
+     5000           NaN       NaN  NaN  NaN  NaN  NaN    NaN   1.724200e+07  1.384182e+07  0.0   3710000.0  12000000.0  33700000.0  39600000.0
+     10000          NaN       NaN  NaN  NaN  NaN  NaN    NaN   1.872654e+07  1.237917e+07  0.0   7930000.0  16000000.0  28225000.0  43100000.0
+TX-C 2100      0.342490  4.983670  0.0  0.0  0.0  0.0  161.0   1.993701e+07  1.295593e+07  0.0   3320000.0  28400000.0  31000000.0  38000000.0
+     5000      0.483765  6.020930  0.0  0.0  0.0  0.0  160.0   2.034228e+07  1.467908e+07  0.0   4190000.0  20700000.0  35800000.0  42900000.0
+     10000     0.555357  5.388942  0.0  0.0  0.0  0.0  160.0   2.441460e+07  1.354077e+07  0.0  11900000.0  25900000.0  37600000.0  44900000.0
+------------------------------
+Percentage of seconds with zero transfer (%)
+Role          RX-C      TX-C
+Distance                    
+2100      2.209615  2.657510
+5000      2.085195  2.442657
+10000     2.232143  2.410714
+
+=============== RX-C ===============
+Role: RX-C, One-way ANOVA - assumes normal distribution of data and equal variances
+F_onewayResult(statistic=230.54079645795912, pvalue=1.26894802610437e-98)
+------------------------------
+Role: RX-C, Kruskal-Wallis H-test - does not assume normal distribution nor equal variances
+KruskalResult(statistic=923.1850476196546, pvalue=3.411253714633078e-201)
+------------------------------
+Role: RX-C, Alexander Govern test - assumes normal distribution but does not assume equal variances
+AlexanderGovernResult(statistic=491.2471048457029, pvalue=2.123472090471338e-107)
+------------------------------
+Role: RX-C, Pearson correlation
+                   Distance  Single Meas. Time  Total Meas. Time  Bitrate_in_bps
+Distance           1.000000           0.002193          0.132987        0.188365
+Single Meas. Time  0.002193           1.000000          0.048438        0.016284
+Total Meas. Time   0.132987           0.048438          1.000000        0.052645
+Bitrate_in_bps     0.188365           0.016284          0.052645        1.000000
+------------------------------
+Role: RX-C, Spearman correlation
+                   Distance  Single Meas. Time  Total Meas. Time  Bitrate_in_bps
+Distance           1.000000           0.002309          0.134566        0.292300
+Single Meas. Time  0.002309           1.000000          0.048438        0.008744
+Total Meas. Time   0.134566           0.048438          1.000000        0.072371
+Bitrate_in_bps     0.292300           0.008744          0.072371        1.000000
+------------------------------
+Role: RX-C, Kendall correlation
+                   Distance  Single Meas. Time  Total Meas. Time  Bitrate_in_bps
+Distance           1.000000           0.001779          0.116555        0.235020
+Single Meas. Time  0.001779           1.000000          0.048118        0.006314
+Total Meas. Time   0.116555           0.048118          1.000000        0.049435
+Bitrate_in_bps     0.235020           0.006314          0.049435        1.000000
+
+=============== TX-C ===============
+Role: TX-C, One-way ANOVA - assumes normal distribution of data and equal variances
+F_onewayResult(statistic=108.99088460008025, pvalue=1.4833516088493633e-47)
+------------------------------
+Role: TX-C, Kruskal-Wallis H-test - does not assume normal distribution nor equal variances
+KruskalResult(statistic=385.11910076756396, pvalue=2.3574898443654356e-84)
+------------------------------
+Role: TX-C, Alexander Govern test - assumes normal distribution but does not assume equal variances
+AlexanderGovernResult(statistic=221.2798466443494, pvalue=8.906187274077684e-49)
+------------------------------
+Role: TX-C, Pearson correlation
+                   Distance     Retry  Single Meas. Time  Total Meas. Time  Bitrate_in_bps
+Distance           1.000000  0.015211           0.002193          0.132987        0.139559
+Retry              0.015211  1.000000           0.011203          0.014107       -0.035612
+Single Meas. Time  0.002193  0.011203           1.000000          0.048438        0.006612
+Total Meas. Time   0.132987  0.014107           0.048438          1.000000       -0.007002
+Bitrate_in_bps     0.139559 -0.035612           0.006612         -0.007002        1.000000
+------------------------------
+Role: TX-C, Spearman correlation
+                   Distance     Retry  Single Meas. Time  Total Meas. Time  Bitrate_in_bps
+Distance           1.000000  0.037890           0.002309          0.134566        0.194399
+Retry              0.037890  1.000000           0.017301          0.017185       -0.138618
+Single Meas. Time  0.002309  0.017301           1.000000          0.048438        0.011526
+Total Meas. Time   0.134566  0.017185           0.048438          1.000000        0.004691
+Bitrate_in_bps     0.194399 -0.138618           0.011526          0.004691        1.000000
+------------------------------
+Role: TX-C, Kendall correlation
+                   Distance     Retry  Single Meas. Time  Total Meas. Time  Bitrate_in_bps
+Distance           1.000000  0.035355           0.001779          0.116555        0.160821
+Retry              0.035355  1.000000           0.013974          0.013867       -0.111820
+Single Meas. Time  0.001779  0.013974           1.000000          0.048118        0.008623
+Total Meas. Time   0.116555  0.013867           0.048118          1.000000        0.005305
+Bitrate_in_bps     0.160821 -0.111820           0.008623          0.005305        1.000000
+------------------------------
