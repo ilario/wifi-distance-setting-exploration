@@ -7,56 +7,53 @@ import seaborn as sb
 from scipy import stats
 import numpy as np
 
-# from scalene import scalene_profiler
-# scalene_profiler.start()
-distance = []
+
+param_array = []
 
 
-def read_block(filehandl):
-    while ("distance" not in (row := filehandl.readline())) & bool(row):
-        pass
-    # check if the row has some content or if the file is over
-    if row:
-        # the distance line usually ends with a comma,
-        # sometimes the distance in between quotes
-        # so we have to remove them. And also remove the newline.
-        # looks like:
-        # Sun Jun 25 23:10:02 UTC 2023 "distance": 2100, 
-        distancestr = "".join(c for c in row.split()[7] if c.isalnum())
-        distance.append(int(distancestr))
-    else:
-        # if the row is empty, the file is ended, just returning something
-        # for communicating to the loop that the file is over
-        yield False
-    while ("Cwnd" not in (row := filehandl.readline())) & bool(row):
-        pass
+def extract_data(file, par="distance"):
+    """Reads the log of an experiment and generates a DataFrame
+    with the data and the explored PARAMer
 
-    # here we return all the data rows until a termination string is found
-    # (or until the end of the file)
-    # the table could also be interrupted by a line like this:
-    # iperf3: error - unable to receive control message: Connection reset by peer
-    # the table could also be interrupted suddenly,
-    # without anything else before the next table, like this:
-    # [ 33][RX-S] 518.00-519.00 sec  0.00 Bytes  0.00 bits/sec
-    # [ 35][TX-S] 518.00-519.00 sec  0.00 Bytes  0.00 bits/sec    0   1.41 KBytes
-    # Wed Jul 5 01:00:02 UTC 2023 "distance": "2100",
-    while ((row := filehandl.readline()).startswith("[")) & bool(row):
-        # using a generator allows to unpack all of the rows at the same time
-        # using datatable = [*read_block(filehandl)]
-        yield row
+    :PARAM file: FILENAME of the log to be processed
+    :PARAM PARAM: name of the PARAMeter that has been explored
+    :return: Pandas DataFrame with the data indexed by the value of the PARAMeter
 
+    >>> df = extract_data("iperf3-client.log", PARAM="distance")
+    """
 
-def extract_data(file):
-    datatensor = []
-    with open(file, "r", encoding="us-ascii") as filehandl:
-        while True:
-            datatable = [*read_block(filehandl)]
+    def read_block(filehandl, par="distance"):
+        while (par not in (row := filehandl.readline())) & bool(row):
+            pass
+        # check if the row has some content or if the file is over
+        if row:
+            # the distance line usually ends with a comma,
+            # sometimes the distance in between quotes
+            # so we have to remove them. And also remove the newline.
+            # looks like:
+            # Sun Jun 25 23:10:02 UTC 2023 "distance": 2100, 
+            param_str = "".join(c for c in row.split()[7] if c.isalnum())
+            param_array.append(int(param_str))
+        else:
+            # if the row is empty, the file is ended, just returning something
+            # for communicating to the loop that the file is over
+            yield False
+        while ("Cwnd" not in (row := filehandl.readline())) & bool(row):
+            pass
 
-            # interrupt if an empty line is received, as this indicates that the file is over
-            if datatable[0]:
-                datatensor.append(datatable)
-            else:
-                break
+        # here we return all the data rows until a termination string is found
+        # (or until the end of the file)
+        # the table could also be interrupted by a line like this:
+        # iperf3: error - unable to receive control message: Connection reset by peer
+        # the table could also be interrupted suddenly,
+        # without anything else before the next table, like this:
+        # [ 33][RX-S] 518.00-519.00 sec  0.00 Bytes  0.00 bits/sec
+        # [ 35][TX-S] 518.00-519.00 sec  0.00 Bytes  0.00 bits/sec    0   1.41 KBytes
+        # Wed Jul 5 01:00:02 UTC 2023 "distance": "2100",
+        while ((row := filehandl.readline()).startswith("[")) & bool(row):
+            # using a generator allows to unpack all of the rows at the same time
+            # using datatable = [*read_block(filehandl)]
+            yield row
 
     def remove_brakets_split(s):
         # .split() will not separate the first and second column (ID and Role),
@@ -75,6 +72,17 @@ def extract_data(file):
         sp = s.split() + [np.nan]
         # we are dropping some unused columns
         return sp[1:2]+sp[6:9]
+
+    datatensor = []
+    with open(file, "r", encoding="us-ascii") as filehandl:
+        while True:
+            datatable = [*read_block(filehandl, par)]
+
+            # interrupt if an empty line is received, as this indicates that the file is over
+            if datatable[0]:
+                datatensor.append(datatable)
+            else:
+                break
 
     # I am not sure this is the most efficient way to do this...
     datatensor = [map(remove_brakets_split, datatable)
@@ -116,12 +124,12 @@ def extract_data(file):
     # Units      object
     # Retry      object
 
-    df = pd.concat(df, ignore_index=False, keys=distance,
-                   names=["Distance", "Entry"])
+    df = pd.concat(df, ignore_index=False, keys=param_array,
+                   names=[par, "Entry"])
     # at this point the data looks like:
     # print(df)
     #                     Role Bitrate      Units Retry
-    # Distance Entry                                   
+    # distance Entry                                   
     # 2100     0      6][TX-C]    12.2  Mbits/sec     0
     #          1      8][RX-C]    8.28  Mbits/sec   nan
     #          2      6][TX-C]    14.9  Mbits/sec     0
@@ -134,7 +142,7 @@ def extract_data(file):
     # at this point the data looks like:
     # print(df)
     #           Entry      Role Bitrate      Units Retry
-    # Distance                                          
+    # distance                                          
     # 2100          0  6][TX-C]    12.2  Mbits/sec     0
     # 2100          1  8][RX-C]    8.28  Mbits/sec   nan
     # 2100          2  6][TX-C]    14.9  Mbits/sec     0
@@ -157,7 +165,7 @@ def extract_data(file):
     # # at this point the data looks like:
     # print(df)
     #               Role Bitrate      Units Retry  Single Meas. Time  Total Meas. Time
-    # Distance                                                                        
+    # distance                                                                        
     # 2100      6][TX-C]    12.2  Mbits/sec     0           0.000000          0.000000
     # 2100      8][RX-C]    8.28  Mbits/sec   nan           0.008333          0.008334
     # 2100      6][TX-C]    14.9  Mbits/sec     0           0.016667          0.016667
@@ -183,7 +191,7 @@ def extract_data(file):
     # at this point the data looks like:
     # print(df)
     #                Bitrate      Units  Retry  Single Meas. Time  Total Meas. Time
-    # Distance Role                                                                
+    # distance Role                                                                
     # 2100     TX-C    24.40  Mbits/sec    0.0           0.000000          0.000000
     #          RX-C    14.80  Mbits/sec    NaN           0.008333          0.008334
     #          TX-C     3.77  Mbits/sec    0.0           0.016667          0.016667
@@ -204,14 +212,14 @@ def extract_data(file):
     # Total Meas. Time      float64
 
     # units management taken from https://stackoverflow.com/a/48005992/5033401
-    units_dict = {"Mbits/sec": 1e6, "Kbits/sec": 1e3, "bits/sec": 1}
+    units_dict = {"Mbits/sec": 1, "Kbits/sec": 1e-3, "bits/sec": 1e-6}
     units_multiplier = df["Units"].map(units_dict).astype(int)
-    df["Bitrate_in_bps"] = df["Bitrate"].values * units_multiplier
+    df["Bitrate_in_Mbps"] = df["Bitrate"].values * units_multiplier
     df.drop(columns=["Bitrate", "Units"], inplace=True)
     # at this point the data looks like:
     # print(df)
-    #                Retry  Single Meas. Time  Total Meas. Time  Bitrate_in_bps
-    # Distance Role                                                            
+    #                Retry  Single Meas. Time  Total Meas. Time  Bitrate_in_Mbps
+    # distance Role                                                            
     # 2100     TX-C    0.0           0.000000          0.000000      24400000.0
     #          RX-C    NaN           0.008333          0.008334      14800000.0
     #          TX-C    0.0           0.016667          0.016667       3770000.0
@@ -228,67 +236,11 @@ def extract_data(file):
     # Retry                float64
     # Single Meas. Time    float64
     # Total Meas. Time     float64
-    # Bitrate_in_bps       float64
+    # Bitrate_in_Mbps       float64
     return df
 
 
-def plot_violinplot(datanoindex, file):
-    plt.clf()
-    datanoindex = data.reset_index()
-    plotax = sb.catplot(y="Bitrate_in_bps", x="Role",
-                        data=datanoindex, hue="Distance",
-                        bw=.05, scale="width", kind="violin")
-    plotax.set(ylabel="Bitrate (bits/s)")
-    plt.savefig(file, dpi=200)
-
-
-def plot_vs_single_meas_time_scatter(dataplotting, file):
-    datanoindex = dataplotting.reset_index()
-    datanoindex = datanoindex.astype({"Distance": "category"})
-    plt.clf()
-    plotax = sb.relplot(y="Bitrate_in_bps", x="Single Meas. Time",
-                        hue="Distance", data=datanoindex, kind="scatter",
-                        row="Role", aspect=6, alpha=0.3, linewidth=0)
-    plotax.set(xlabel="Single Measurement Time (min), all measurement overlapped",
-               ylabel="Bitrate (bits/s)")
-    plt.savefig(file, dpi=100)
-
-
-def plot_vs_total_meas_time_scatter(dataplotting, file):
-    datanoindex = dataplotting.reset_index()
-    datanoindex = datanoindex.astype({"Distance": "category"})
-    plt.clf()
-    plotax = sb.relplot(y="Bitrate_in_bps", x="Total Meas. Time",
-                        hue="Distance", data=datanoindex, kind="scatter",
-                        row="Role", aspect=6, alpha=0.4, linewidth=0)
-    plotax.set(xlabel="Total Measurement Time (min)",
-               ylabel="Bitrate (bits/s)")
-    plt.savefig(file, dpi=100)
-
-
-def plot_vs_time_line(dataplotting, file, smooth):
-    """ Group as many data points as indicated by the smooth parameter
-    (smoothing) and then plot a line with confidence interval
-    """
-    dataplotting["grouped_index"] = 0
-    for par in dataplotting.index.unique(level="Distance"):
-        dataplotting.loc[par, "grouped_index"] = [
-            gi//smooth*smooth for gi in range(0, dataplotting.loc[par].shape[0])]
-    datanoindex = dataplotting.reset_index()
-    datanoindex = datanoindex.astype({"Distance": "category"})
-    plt.clf()
-    plotax = sb.relplot(y="Bitrate_in_bps", x="grouped_index",
-                        data=datanoindex, kind="line",
-                        row="Role", col="Distance", aspect=3)
-    # the time index starts from zero, so the duration is one second more
-    single_meas_duration = dataplotting["Single Meas. Time"].values[-1] + 1/60
-    plotax.set(xlabel="Concatenated Single Measurement Time " +
-               f"(each measurement was {single_meas_duration:.3g} min long) (min)",#.format(
-                   ylabel="Bitrate (bits/s)")
-    plt.savefig(file, dpi=100)
-
-
-def describe_data(datadesc, file):
+def describe_data(datadesc, file, par="distance"):
     out = []
     # for avoiding the message
     # "PerformanceWarning: indexing past lexsort depth may impact performance."
@@ -300,12 +252,12 @@ def describe_data(datadesc, file):
     out.append(
         # remove Time columns, so that they will not appear in the descriptions
         datanoindex.drop(columns=["Single Meas. Time", "Total Meas. Time"]).groupby(
-            ["Role", "Distance"]).describe().drop(
+            ["Role", par]).describe().drop(
             "count", axis=1, level=1).to_string())
 
     out.append("-"*30)
     out.append("Percentage of seconds with zero transfer (%)")
-    out.append(datanoindex.pivot_table(values="Bitrate_in_bps", index="Distance",
+    out.append(datanoindex.pivot_table(values="Bitrate_in_Mbps", index=par,
                columns="Role", aggfunc=lambda x: 100*sum(x == 0)/len(x)).to_string())
 
     for role in datasorted.index.unique(level="Role"):
@@ -313,8 +265,8 @@ def describe_data(datadesc, file):
         datarole = datasorted.loc[(slice(None), role), :].copy()
         datarole.dropna(axis=1, inplace=True)
 
-        dataroleserie = [datarole.loc[distance]["Bitrate_in_bps"]
-                         for distance in datarole.index.unique(level="Distance")]
+        dataroleserie = [datarole.loc[par]["Bitrate_in_Mbps"]
+                         for par in datarole.index.unique(level=par)]
         out.append(
             f"Role: {role}, One-way ANOVA - " +
             "assumes normal distribution of data and equal variances")
@@ -330,7 +282,7 @@ def describe_data(datadesc, file):
             "assumes normal distribution but does not assume equal variances")
         out.append(str(stats.alexandergovern(*dataroleserie)))
 
-        datarolenoindex = datarole.reset_index(level="Distance")
+        datarolenoindex = datarole.reset_index(level=par)
         out.append("-"*30)
         out.append(f"Role: {role}, Pearson correlation")
         out.append(str(datarolenoindex.corr()))
@@ -349,37 +301,122 @@ def describe_data(datadesc, file):
             filehandl.write(outstr)
 
 
+def plot_violinplot(datanoindex, file, par="distance"):
+    plt.clf()
+    datanoindex = data.reset_index()
+    plotax = sb.catplot(y="Bitrate_in_Mbps", x="Role",
+                        data=datanoindex, hue=par,
+                        bw=.05, scale="width", kind="violin")
+    plotax.set(ylabel="Bitrate (Mbits/s)")
+    plt.savefig(file, dpi=200)
+
+
+def plot_vs_single_meas_time_scatter(dataplotting, file, par="distance"):
+    datanoindex = dataplotting.reset_index()
+    datanoindex = datanoindex.astype({par: "category"})
+    plt.clf()
+    plotax = sb.relplot(y="Bitrate_in_Mbps", x="Single Meas. Time",
+                        hue=par, data=datanoindex, kind="scatter",
+                        row="Role", aspect=6, alpha=0.3, linewidth=0)
+    n_experiments = round(datanoindex["Total Meas. Time"].iloc[-1] /
+                          max(datanoindex["Single Meas. Time"]) /
+                          len(datanoindex[par].unique()))
+    plotax.set(xlabel=f"Single Measurement Time (min), {n_experiments} measurements " +
+                      "overlapped, one point per second",
+               ylabel="Bitrate (Mbits/s)")
+    plt.savefig(file, dpi=100)
+
+
+def plot_vs_total_meas_time_scatter(dataplotting, file, par="distance"):
+    datanoindex = dataplotting.reset_index()
+    datanoindex = datanoindex.astype({par: "category"})
+    plt.clf()
+    plotax = sb.relplot(y="Bitrate_in_Mbps", x="Total Meas. Time",
+                        hue=par, data=datanoindex, kind="scatter",
+                        row="Role", aspect=6, alpha=0.4, linewidth=0)
+    plotax.set(xlabel="Total Measurement Time (min)",
+               ylabel="Bitrate (Mbits/s)")
+    plt.savefig(file, dpi=100)
+
+
+def plot_vs_time_line(dataplotting, file, smooth=30, par="distance"):
+    """ Group as many data points as indicated by the smooth PARAMeter
+    (smoothing) and then plot a line with confidence interval
+    """
+    # creating a new column for storing the times, rounded with the smooth PARAMeter
+    dataplotting["grouped_index"] = 0
+    for p in dataplotting.index.unique(level=par):
+        # use the line number of the data with the same PARAM value
+        # and convert it to a single time in minutes
+        # aggregating the points with the smooth PARAMeter, so that they will be
+        # smoothed by the plotting function
+        dataplotting.loc[p, "grouped_index"] = [
+            (gi//smooth*smooth)/120 for gi in range(0, dataplotting.loc[p].shape[0])]
+
+    datanoindex = dataplotting.reset_index()
+    datanoindex = datanoindex.astype({par: "category"})
+    plt.clf()
+    plotax = sb.relplot(y="Bitrate_in_Mbps", x="grouped_index",
+                        data=datanoindex, kind="line",
+                        row="Role", col=par, aspect=3)
+    # the time index starts from zero, so the duration is one second more
+    single_meas_duration = dataplotting["Single Meas. Time"].values[-1] + 1/60
+    plotax.set(xlabel="Concatenated Single Measurement Time " +
+               f"(each measurement was {single_meas_duration:.3g} min long) (min)",
+               ylabel="Bitrate (Mbits/s)")
+    # adding vertical lines to make clear the separation between different measurements
+    for params, ax in plotax.axes_dict.items():
+        # subset the data based on the PARAMeters plotted in each of the small plots
+        sub = dataplotting.loc[params[1], params[0]]
+        # take the lines of the start of each experiment
+        substart = sub[sub["Single Meas. Time"]
+                       == min(sub["Single Meas. Time"])]
+        # the column grouped_index is the one used as x
+        for t in substart["grouped_index"]:
+            ax.axvline(x=t, dashes=(3, 3), color="gray")
+    plt.savefig(file, dpi=100)
+
+
 if __name__ == "__main__":
 
     if len(argv) > 1:
-        filename = argv[-1]
-        assert isfile(
-            filename), "Please provide the log file filename as an argument! The provided argument is not a file!"
+        FILENAME = argv[-1]
+        assert isfile(FILENAME), ("Please provide the log file file name " +
+                                  "as an argument! The provided argument is not a file!")
+        PARAM = argv[-2]
     else:
+        from tkinter.simpledialog import askstring
         from tkinter.filedialog import askopenfilename
-        filename = askopenfilename(title='Choose the log file to process')
+        PARAM = askstring("Parameter beeing explored",
+                          "Which is the name of the PARAMeter that has been " +
+                          "explored? (e.g. distance)")
+        FILENAME = askopenfilename(title='Choose the log file to process')
 
-    print("###### Reading data from file " + filename + " ######")
-    data = extract_data(filename)
+    print("###### Reading data from file " + FILENAME + " ######")
+    data = extract_data(FILENAME, PARAM)
 
-    print("-"*30 + "\n###### Describing data... ######")
-    describe_data(data, filename+"-describe.txt")
+    saveto = FILENAME+"-describe.txt"
+    print("-"*30 +
+          f"\n###### Describing data and saving to {saveto}... ######")
+    describe_data(data, saveto, PARAM)
 
-    savingfilename = filename+"-violin.png"
-    print("-"*30 + f"\n###### Creating violin plots... {savingfilename} ######")
-    plot_violinplot(data, savingfilename)
+    saveto = FILENAME+"-violin.png"
+    print("-"*30 + f"\n###### Creating violin plot {saveto} ######")
+    plot_violinplot(data, saveto)
 
-    savingfilename = filename+"-vs_single_meas_time_scatter.png"
-    print("-"*30 + f"\n###### Creating scatter plot - all measurements overlapped over their duration... {savingfilename} ######")
-    plot_vs_single_meas_time_scatter(data, savingfilename)
+    saveto = FILENAME+"-vs_single_meas_time_scatter.png"
+    print("-"*30 + "\n###### Creating scatter plot - all measurements overlapped " +
+          f"over their duration {saveto} ######")
+    plot_vs_single_meas_time_scatter(data, saveto)
 
-    savingfilename = filename+"-vs_total_meas_time_scatter.png"
-    print("-"*30 + f"\n###### Creating scatter plot - measurements plotted in the order they were measured... {savingfilename} ######")
-    plot_vs_total_meas_time_scatter(data, savingfilename)
+    saveto = FILENAME+"-vs_total_meas_time_scatter.png"
+    print("-"*30 + "\n###### Creating scatter plot - measurements plotted in " +
+          f"the order they were measured {saveto} ######")
+    plot_vs_total_meas_time_scatter(data, saveto, PARAM)
 
-    smoothing = 30
-    savingfilename = filename+"-vs_time_line.png"
-    print("-"*30 + f"\n###### Creating scatter plot - measurements separated by parameter, each point is the average of {smoothing} actual points... {savingfilename} ######")
-    plot_vs_time_line(data, savingfilename, smoothing)
-
-# scalene_profiler.stop()
+    saveto = FILENAME+"-vs_time_line.png"
+    SMOOTHING = 30
+    print("-"*30 +
+          "\n###### Creating scatter plot - measurements separated by parameter, " +
+          f"each point is the average of {SMOOTHING} actual points {saveto} ######")
+    plot_vs_time_line(data, saveto, SMOOTHING, PARAM)
