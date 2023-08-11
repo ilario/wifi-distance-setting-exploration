@@ -13,13 +13,13 @@ param_array = []
 
 def extract_data(file, par="distance"):
     """Reads the log of an experiment and generates a DataFrame
-    with the data and the explored PARAMer
+    with the data and the explored parameter
 
-    :PARAM file: FILENAME of the log to be processed
-    :PARAM PARAM: name of the PARAMeter that has been explored
-    :return: Pandas DataFrame with the data indexed by the value of the PARAMeter
+    :param file: FILENAME of the log to be processed
+    :param par: name of the parameter that has been explored
+    :return: Pandas DataFrame with the data indexed by the value of the parameter
 
-    >>> df = extract_data("iperf3-client.log", PARAM="distance")
+    >>> df = extract_data("iperf3-client.log", par="distance")
     """
 
     def read_block(filehandl, par="distance"):
@@ -340,15 +340,15 @@ def plot_vs_total_meas_time_scatter(dataplotting, file, par="distance"):
 
 
 def plot_vs_time_line(dataplotting, file, smooth=30, par="distance"):
-    """ Group as many data points as indicated by the smooth PARAMeter
+    """ Group as many data points as indicated by the smooth parameter
     (smoothing) and then plot a line with confidence interval
     """
-    # creating a new column for storing the times, rounded with the smooth PARAMeter
+    # creating a new column for storing the times, rounded with the smooth parameter
     dataplotting["grouped_index"] = 0
     for p in dataplotting.index.unique(level=par):
-        # use the line number of the data with the same PARAM value
+        # use the line number of the data with the same par value
         # and convert it to a single time in minutes
-        # aggregating the points with the smooth PARAMeter, so that they will be
+        # aggregating the points with the smooth parameter, so that they will be
         # smoothed by the plotting function
         dataplotting.loc[p, "grouped_index"] = [
             (gi//smooth*smooth)/120 for gi in range(0, dataplotting.loc[p].shape[0])]
@@ -366,7 +366,7 @@ def plot_vs_time_line(dataplotting, file, smooth=30, par="distance"):
                ylabel="Bitrate (Mbits/s)")
     # adding vertical lines to make clear the separation between different measurements
     for params, ax in plotax.axes_dict.items():
-        # subset the data based on the PARAMeters plotted in each of the small plots
+        # subset the data based on the parameters plotted in each of the small plots
         sub = dataplotting.loc[params[1], params[0]]
         # take the lines of the start of each experiment
         substart = sub[sub["Single Meas. Time"]
@@ -388,7 +388,7 @@ if __name__ == "__main__":
         from tkinter.simpledialog import askstring
         from tkinter.filedialog import askopenfilename
         PARAM = askstring("Parameter beeing explored",
-                          "Which is the name of the PARAMeter that has been " +
+                          "Which is the name of the parameter that has been " +
                           "explored? (e.g. distance)")
         FILENAME = askopenfilename(title='Choose the log file to process')
 
