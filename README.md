@@ -136,6 +136,8 @@ The first lines determine the hour at which the command will run, make sure to u
 Otherwise, if you have the NEW style configuration (see above), launch:
 
 ```
+uci set 'lime-node.5ghz=lime-wifi-band' ; uci commit lime-node 
+
 for i in $(seq 1 7); do
      hour=$(( ($i+22) % 24));
      echo 'uci set lime-node.5ghz.distance='2100'; uci commit; lime-config; wifi; sleep 600; echo $(date) $(wifi status | grep distance) >> /tmp/iperf3-client.log; iperf3 -c 10.170.170.196 -t 480 --bidir --logfile=/tmp/iperf3-client.log' | at $hour:00
@@ -144,9 +146,11 @@ for i in $(seq 1 7); do
 done 
 ```
 
+The first line is for creating a new section in /etc/config/lime-node
+
 Remember to replace 10.170.170.196 with the IP of the server node.
 
-The first lines determine the hour at which the command will run, make sure to use the same as in the server node command.
+The first lines in the for loop, determine the hour at which the command will run, make sure to use the same as in the server node command.
 
 ## Data analysis script
 
