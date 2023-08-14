@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from sys import argv
-from os.path import isfile
+import sys
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sb
@@ -11,11 +11,11 @@ import numpy as np
 param_array = []
 
 
-def extract_data(file, par="distance"):
+def extract_data(filehandl, par="distance"):
     """Reads the log of an experiment and generates a DataFrame
     with the data and the explored parameter
 
-    :param file: FILENAME of the log to be processed
+    :param filehandl: handle to the file of the log to be processed
     :param par: name of the parameter that has been explored
     :return: Pandas DataFrame with the data indexed by the value of the parameter
 
@@ -74,15 +74,14 @@ def extract_data(file, par="distance"):
         return sp[1:2]+sp[6:9]
 
     datatensor = []
-    with open(file, "r", encoding="us-ascii") as filehandl:
-        while True:
-            datatable = [*read_block(filehandl, par)]
+    while True:
+        datatable = [*read_block(filehandl, par)]
 
-            # interrupt if an empty line is received, as this indicates that the file is over
-            if datatable[0]:
-                datatensor.append(datatable)
-            else:
-                break
+        # interrupt if an empty line is received, as this indicates that the file is over
+        if datatable[0]:
+            datatensor.append(datatable)
+        else:
+            break
 
     # I am not sure this is the most efficient way to do this...
     datatensor = [map(remove_brakets_split, datatable)
@@ -240,7 +239,17 @@ def extract_data(file, par="distance"):
     return df
 
 
-def describe_data(datadesc, file, par="distance"):
+def describe_data(datadesc, file=None, par="distance"):
+    """Gives basic information on the provided DataFrame and
+    some statistical analysis. It can also append this to a file.
+
+    :param datadesc: DataFrame to be analyzed
+    :param file: optional, file name for appending the results
+    :param distance: the parameter that has been explored
+
+    >>> describe_data(df, file="iperf3-client.log-describe.txt", par="distance")
+    """
+
     out = []
     # for avoiding the message
     # "PerformanceWarning: indexing past lexsort depth may impact performance."
@@ -302,6 +311,16 @@ def describe_data(datadesc, file, par="distance"):
 
 
 def plot_violinplot(datanoindex, file, par="distance"):
+    """Plots a violin plot and a box plot of the speed data divided by role
+    (transmitting or receiving) and by the value of the parameter (e.g. distance) 
+
+    :param datadesc: DataFrame to be analyzed
+    :param file: optional, file name for appending the results
+    :param distance: the parameter that has been explored
+
+    >>> describe_data(df, file="iperf3-client.log-describe.txt", par="distance")
+    """
+
     plt.clf()
     datanoindex = data.reset_index()
     plotax = sb.catplot(y="Bitrate_in_Mbps", x="Role",
@@ -339,7 +358,7 @@ def plot_vs_total_meas_time_scatter(dataplotting, file, par="distance"):
     plt.savefig(file, dpi=100)
 
 
-def plot_vs_time_line(dataplotting, file, smooth=30, par="distance"):
+def plot_vs_time_line(dataplotting, file, par="distance", smooth=30):
     """ Group as many data points as indicated by the smooth parameter
     (smoothing) and then plot a line with confidence interval
     """
@@ -377,46 +396,94 @@ def plot_vs_time_line(dataplotting, file, smooth=30, par="distance"):
     plt.savefig(file, dpi=100)
 
 
-if __name__ == "__main__":
+def usage():
+    print("For documentation check the readme on:\n",
+          "https://github.com/ilario/wifi-distance-setting-exploration\n\n" +
+          "Provide as arguments:\n",
+          "* the parameter name to explore\n",
+          "* the file name of the log file\n\n" +
+          "For example:\n\n",
+          "python iperf3-log-analysis.py distance 20230626-distance_2100/iperf3-client.log\n\n" +
+          "Or simply run without arguments for opening a graphical interface that will " +
+          "ask for them:\n\n",
+          "python iperf3-log-analysis.py\n\n" +
+          "Alternative ways to run, useful for running on multiple logs:\n\n",
+          "cat *distance_2100*/iperf3-client.log | python iperf3-log-analysis.py distance\n\n",
+          "python iperf3-log-analysis.py distance\n" +
+          "and then paste in the terminal all the log content and press Ctrl+D twice for " +
+          "starting the processing\n\n",
+          "python iperf3-log-analysis.py distance <(cat *distance_2100*/iperf3-client.log)")
 
-    if len(argv) > 1:
-        FILENAME = argv[-1]
-        assert isfile(FILENAME), ("Please provide the log file file name " +
-                                  "as an argument! The provided argument is not a file!")
-        PARAM = argv[-2]
-    else:
+
+if __name__ == "__main__":
+    FILENAME_OUT = os.path.join(os.getcwd(), "output")
+    handle_needs_closing = False
+    if "--help" in sys.argv or "-h" in sys.argv:
+        usage()
+        sys.exit()
+    # check if the last argument seems like a valid parameter
+    # simply checking that it does not seem a python file
+    elif sys.argv[-1].endswith(".py"):
+        print("No arguments detected, asking them in a graphical way...")
         from tkinter.simpledialog import askstring
         from tkinter.filedialog import askopenfilename
         PARAM = askstring("Parameter beeing explored",
                           "Which is the name of the parameter that has been " +
                           "explored? (e.g. distance)")
         FILENAME = askopenfilename(title='Choose the log file to process')
+        FILENAME_OUT = FILENAME
+        handle = open(FILENAME, "r", encoding="us-ascii")
+        handle_needs_closing = True
+    elif sys.argv[-2].endswith(".py"):
+        print("Only one argument detected, " +
+              "taking it as the name of the parameter being explored." +
+              "Reading the file content from STDIN. Paste here your data " +
+              "and interrupt pressing twice Ctrl+D")
+        handle = sys.stdin
+        PARAM = sys.argv[-1]
+    elif os.path.exists(sys.argv[-1]):
+        FILENAME = sys.argv[-1]
+        # the provided filename could be a pipe, for example:
+        # python iperf3-log-analysis.py distance <(cat */iperf3-client.log)
+        # in that case, the FILENAME_OUT will be the default "output" value
+        if os.path.isfile(FILENAME):
+            FILENAME_OUT = FILENAME
+        PARAM = sys.argv[-2]
+        handle = open(FILENAME, "r", encoding="us-ascii")
+        handle_needs_closing = True
+    # if there are two arguments and the last argument does not exist
+    # something wrong is happening
+    else:
+        usage()
+        sys.exit(1)
 
-    print("###### Reading data from file " + FILENAME + " ######")
-    data = extract_data(FILENAME, PARAM)
+    print("###### Reading data... ######")
+    data = extract_data(handle, PARAM)
+    if handle_needs_closing:
+        handle.close()
 
-    saveto = FILENAME+"-describe.txt"
+    saveto = FILENAME_OUT+"-describe.txt"
     print("-"*30 +
           f"\n###### Describing data and saving to {saveto}... ######")
     describe_data(data, saveto, PARAM)
 
-    saveto = FILENAME+"-violin.png"
+    saveto = FILENAME_OUT+"-violin.png"
     print("-"*30 + f"\n###### Creating violin plot {saveto} ######")
     plot_violinplot(data, saveto)
 
-    saveto = FILENAME+"-vs_single_meas_time_scatter.png"
+    saveto = FILENAME_OUT+"-vs_single_meas_time_scatter.png"
     print("-"*30 + "\n###### Creating scatter plot - all measurements overlapped " +
           f"over their duration {saveto} ######")
     plot_vs_single_meas_time_scatter(data, saveto)
 
-    saveto = FILENAME+"-vs_total_meas_time_scatter.png"
+    saveto = FILENAME_OUT+"-vs_total_meas_time_scatter.png"
     print("-"*30 + "\n###### Creating scatter plot - measurements plotted in " +
           f"the order they were measured {saveto} ######")
     plot_vs_total_meas_time_scatter(data, saveto, PARAM)
 
-    saveto = FILENAME+"-vs_time_line.png"
+    saveto = FILENAME_OUT+"-vs_time_line.png"
     SMOOTHING = 30
     print("-"*30 +
           "\n###### Creating scatter plot - measurements separated by parameter, " +
           f"each point is the average of {SMOOTHING} actual points {saveto} ######")
-    plot_vs_time_line(data, saveto, SMOOTHING, PARAM)
+    plot_vs_time_line(data, saveto, PARAM, SMOOTHING)
