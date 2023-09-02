@@ -1,0 +1,89 @@
+                  Retry                                       Bitrate_in_Mbps                                          
+                   mean        std  min  25%  50%  75%    max            mean       std  min     25%    50%   75%   max
+Role distance                                                                                                          
+RX-C 2100           NaN        NaN  NaN  NaN  NaN  NaN    NaN       24.665127  8.788452  0.0  19.800  27.50  31.4  37.7
+     5000           NaN        NaN  NaN  NaN  NaN  NaN    NaN       25.946122  8.552044  0.0  21.275  27.50  32.3  41.1
+     10000          NaN        NaN  NaN  NaN  NaN  NaN    NaN       23.580643  7.747303  0.0  19.900  24.70  28.9  42.1
+TX-C 2100      0.896336   4.829326  0.0  0.0  0.0  1.0  159.0       10.367254  7.704649  0.0   5.070   8.11  13.1  49.2
+     5000      1.559666   7.909856  0.0  0.0  0.0  1.0  159.0       10.980901  7.717970  0.0   5.730   9.03  14.1  41.4
+     10000     3.175000  14.606102  0.0  0.0  0.0  1.0  158.0       12.104935  6.636812  0.0   7.650  11.40  15.8  47.5
+------------------------------
+Percentage of seconds with zero transfer (%)
+Role          RX-C      TX-C
+distance                    
+2100      1.072386  1.906464
+5000      1.252983  2.804296
+10000     2.529762  3.988095
+------------------------------
+Pearson correlation between RX and TX with the distance setting at 2100:
+-0.45595881933386984
+Pearson correlation between RX and TX with the distance setting at 5000:
+-0.2686778326134252
+Pearson correlation between RX and TX with the distance setting at 10000:
+0.07892663872453878
+
+=============== RX-C ===============
+Role: RX-C, One-way ANOVA - assumes normal distribution of data and equal variances
+F_onewayResult(statistic=67.0938765640286, pvalue=1.1324271975933991e-29)
+------------------------------
+Role: RX-C, Kruskal-Wallis H-test - does not assume normal distribution nor equal variances
+KruskalResult(statistic=223.7954055780112, pvalue=2.5318917932934254e-49)
+------------------------------
+Role: RX-C, Alexander Govern test - assumes normal distribution but does not assume equal variances
+AlexanderGovernResult(statistic=139.5250316508794, pvalue=5.041088633028559e-31)
+------------------------------
+Role: RX-C, Pearson correlation
+                   distance  Single Meas. Time  Total Meas. Time  Bitrate_in_Mbps
+distance           1.000000           0.000864          0.133110        -0.067417
+Single Meas. Time  0.000864           1.000000          0.047534         0.047061
+Total Meas. Time   0.133110           0.047534          1.000000         0.124418
+Bitrate_in_Mbps   -0.067417           0.047061          0.124418         1.000000
+------------------------------
+Role: RX-C, Spearman correlation
+                   distance  Single Meas. Time  Total Meas. Time  Bitrate_in_Mbps
+distance           1.000000           0.000631          0.134627        -0.097912
+Single Meas. Time  0.000631           1.000000          0.047534         0.055480
+Total Meas. Time   0.134627           0.047534          1.000000         0.111960
+Bitrate_in_Mbps   -0.097912           0.055480          0.111960         1.000000
+------------------------------
+Role: RX-C, Kendall correlation
+                   distance  Single Meas. Time  Total Meas. Time  Bitrate_in_Mbps
+distance           1.000000           0.000486          0.116602        -0.074334
+Single Meas. Time  0.000486           1.000000          0.047515         0.038645
+Total Meas. Time   0.116602           0.047515          1.000000         0.076336
+Bitrate_in_Mbps   -0.074334           0.038645          0.076336         1.000000
+
+=============== TX-C ===============
+Role: TX-C, One-way ANOVA - assumes normal distribution of data and equal variances
+F_onewayResult(statistic=48.017800182424075, pvalue=1.7578638197779402e-21)
+------------------------------
+Role: TX-C, Kruskal-Wallis H-test - does not assume normal distribution nor equal variances
+KruskalResult(statistic=291.47752474406894, pvalue=5.0869761610706596e-64)
+------------------------------
+Role: TX-C, Alexander Govern test - assumes normal distribution but does not assume equal variances
+AlexanderGovernResult(statistic=103.13585482472449, pvalue=4.020996375414596e-23)
+------------------------------
+Role: TX-C, Pearson correlation
+                   distance     Retry  Single Meas. Time  Total Meas. Time  Bitrate_in_Mbps
+distance           1.000000  0.095064           0.000864          0.133110         0.097201
+Retry              0.095064  1.000000           0.013207         -0.058061        -0.050303
+Single Meas. Time  0.000864  0.013207           1.000000          0.047534        -0.051348
+Total Meas. Time   0.133110 -0.058061           0.047534          1.000000        -0.239995
+Bitrate_in_Mbps    0.097201 -0.050303          -0.051348         -0.239995         1.000000
+------------------------------
+Role: TX-C, Spearman correlation
+                   distance     Retry  Single Meas. Time  Total Meas. Time  Bitrate_in_Mbps
+distance           1.000000  0.087779           0.000631          0.134627         0.166315
+Retry              0.087779  1.000000           0.037704          0.068615        -0.273328
+Single Meas. Time  0.000631  0.037704           1.000000          0.047534        -0.072919
+Total Meas. Time   0.134627  0.068615           0.047534          1.000000        -0.266618
+Bitrate_in_Mbps    0.166315 -0.273328          -0.072919         -0.266618         1.000000
+------------------------------
+Role: TX-C, Kendall correlation
+                   distance     Retry  Single Meas. Time  Total Meas. Time  Bitrate_in_Mbps
+distance           1.000000  0.077861           0.000486          0.116602         0.128714
+Retry              0.077861  1.000000           0.028921          0.052843        -0.210754
+Single Meas. Time  0.000486  0.028921           1.000000          0.047515        -0.047963
+Total Meas. Time   0.116602  0.052843           0.047515          1.000000        -0.179045
+Bitrate_in_Mbps    0.128714 -0.210754          -0.047963         -0.179045         1.000000
+------------------------------
