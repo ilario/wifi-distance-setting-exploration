@@ -268,6 +268,19 @@ def describe_data(datadesc, file=None, par="distance"):
     out.append("Percentage of seconds with zero transfer (%)")
     out.append(datanoindex.pivot_table(values="Bitrate_in_Mbps", index=par,
                columns="Role", aggfunc=lambda x: 100*sum(x == 0)/len(x)).to_string())
+    
+    out.append("-"*30)
+    # here I check the correlation between the TX and RX speeds, as it looks like
+    # when RX is high TX is low and vice versa
+    for p in datasorted.index.unique(level=par):
+        # roles are usually TX-C and RX-C, but when analysing a server log 
+        # they are TX-S and RX-S
+        roles = datasorted.index.unique(level="Role")
+        out.append(f"Pearson correlation between RX and TX with the {par} setting at {p}:")
+        # getting the values as series
+        s1 = datasorted.loc[p, roles[0]]["Bitrate_in_Mbps"].reset_index(drop=True)
+        s2 = datasorted.loc[p, roles[1]]["Bitrate_in_Mbps"].reset_index(drop=True)
+        out.append(str(s1.corr(s2)))
 
     for role in datasorted.index.unique(level="Role"):
         out.append("\n=============== "+role+" ===============")
