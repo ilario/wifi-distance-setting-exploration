@@ -488,6 +488,12 @@ if __name__ == "__main__":
     print("-"*30 + "\n###### Creating scatter plot - all measurements overlapped " +
           f"over their duration {saveto} ######")
     plot_vs_single_meas_time_scatter(data, saveto)
+    # plot_vs_single_meas_time_scatter(data.loc[2100,"TX-C"], saveto+"-2T.png")
+    # plot_vs_single_meas_time_scatter(data.loc[5000,"TX-C"], saveto+"-5T.png")
+    # plot_vs_single_meas_time_scatter(data.loc[10000,"TX-C"], saveto+"-10T.png")
+    # plot_vs_single_meas_time_scatter(data.loc[2100,"RX-C"], saveto+"-2R.png")
+    # plot_vs_single_meas_time_scatter(data.loc[5000,"RX-C"], saveto+"-5R.png")
+    # plot_vs_single_meas_time_scatter(data.loc[10000,"RX-C"], saveto+"-10R.png")
 
     saveto = FILENAME_OUT+"-vs_total_meas_time_scatter.png"
     print("-"*30 + "\n###### Creating scatter plot - measurements plotted in " +
